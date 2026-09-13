@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pase de Lista - iPhone</title>
-  <!-- Librería gratuita para escanear QR en navegadores -->
+  <title>Pase de Lista - SEG</title>
+  <!-- Librería para lectura de códigos QR -->
   <script src="https://unpkg.com/html5-qrcode"></script>
   <style>
     body {
@@ -13,8 +13,13 @@
       padding: 15px;
       background-color: #f2f2f7;
       color: #1c1c1e;
+      margin: 0;
     }
-    h2 { margin-bottom: 5px; }
+    h2 { 
+      margin-top: 15px;
+      margin-bottom: 5px; 
+      font-size: 1.4em;
+    }
     #reader {
       width: 100%;
       max-width: 400px;
@@ -37,6 +42,7 @@
       font-weight: 600;
       margin-bottom: 15px;
       color: #007aff;
+      word-break: break-word;
     }
     .checkbox-container {
       display: flex;
@@ -60,9 +66,11 @@
       border-radius: 10px;
       width: 100%;
       cursor: pointer;
+      transition: background-color 0.2s;
     }
     .btn-submit:disabled {
       background-color: #aeaeb2;
+      cursor: not-allowed;
     }
   </style>
 </head>
@@ -70,11 +78,11 @@
 
   <h2>Pase de Lista con QR</h2>
   
-  <!-- Contenedor del video de la cámara -->
+  <!-- Visor de la Cámara -->
   <div id="reader"></div>
 
   <div class="card">
-    <div id="infoAlumno" class="info-label">Apunta al código QR...</div>
+    <div id="infoAlumno" class="info-label">Apunta al código QR del alumno...</div>
     
     <div class="checkbox-container">
       <input type="checkbox" id="chkTrabajo" checked>
@@ -87,7 +95,7 @@
   </div>
 
   <script>
-    // URL de tu Google Apps Script ya integrada
+    // URL de tu Web App de Google Apps Script
     const URL_GOOGLE_SHEETS = "https://script.google.com/macros/s/AKfycbzrJB-1BvHgdPWqAJx0_itQtkDaUKI8uMYuDOMHhQu7NA-xCc0dQNUlOpJb6NO7HfLEDg/exec";
 
     let datosEscaneados = {
@@ -96,53 +104,69 @@
       telefono: ""
     };
 
-    // Función que procesa la lectura del QR
+    // Función que procesa la lectura del QR con los 8 campos
     function onScanSuccess(decodedText, decodedResult) {
-      // Formato esperado en el QR: ID,Nombre,Telefono (Ejemplo: ALU01,Juan Pérez,524771234567)
+      // Formato esperado: Grado,Grupo,Núm,Nombre1,Nombre2,ApellidoP,ApellidoM,Teléfono
       const partes = decodedText.split(',');
       
-      if (partes.length >= 3) {
-        datosEscaneados.id = partes[0].trim();
-        datosEscaneados.nombre = partes[1].trim();
-        datosEscaneados.telefono = partes[2].trim();
-        document.getElementById('infoAlumno').innerText = `Alumno: ${datosEscaneados.nombre}`;
+      if (partes.length >= 8) {
+        const grado = partes[0].trim();
+        const grupo = partes[1].trim();
+        const num = partes[2].trim();
+        const nombre1 = partes[3].trim();
+        const nombre2 = partes[4].trim();
+        const apPaterno = partes[5].trim();
+        const apMaterno = partes[6].trim();
+        const telefono = partes[7].trim();
+
+        // Construir Nombre Completo e ID de lista
+        const nombre2Texto = nombre2 ? nombre2 + ' ' : '';
+        const nombreCompleto = `${nombre1} ${nombre2Texto}${apPaterno} ${apMaterno}`.trim();
+        const idAlumno = `${grado}°"${grupo}" #${num}`;
+
+        datosEscaneados.id = idAlumno;
+        datosEscaneados.nombre = nombreCompleto;
+        datosEscaneados.telefono = telefono;
+
+        document.getElementById('infoAlumno').innerText = `${idAlumno} - ${nombreCompleto}`;
       } else {
-        datosEscaneados.id = decodedText.trim();
+        // En caso de escanear un formato alternativo
+        datosEscaneados.id = "QR General";
         datosEscaneados.nombre = decodedText.trim();
         datosEscaneados.telefono = "";
-        document.getElementById('infoAlumno').innerText = `ID Detectado: ${datosEscaneados.id}`;
+        document.getElementById('infoAlumno').innerText = `Datos: ${decodedText}`;
       }
 
-      // Habilitar el botón de envío
+      // Activar el botón para registrar y enviar
       document.getElementById('btnEnviar').disabled = false;
     }
 
-    // Configuración optimizada de la cámara para Safari en iPhone
+    // Configuración e inicialización de la cámara para iPhone
     const html5QrCode = new Html5Qrcode("reader");
     const config = { 
       fps: 10, 
       qrbox: { width: 250, height: 250 } 
     };
 
-    // Iniciar automáticamente la cámara trasera (environment)
+    // Forzar cámara trasera (environment)
     html5QrCode.start(
       { facingMode: "environment" }, 
       config, 
       onScanSuccess
     ).catch(err => {
-      console.error("Error al iniciar la cámara: ", err);
+      console.error("Error en cámara: ", err);
       document.getElementById('infoAlumno').innerText = "Error: Permite el acceso a la cámara en Safari.";
     });
 
-    // Función para registrar en Sheets y abrir WhatsApp
+    // Envío a Google Sheets y apertura de WhatsApp
     function registrarYEnviar() {
       const trabajo = document.getElementById('chkTrabajo').checked ? "SI" : "NO";
       
-      // 1. Enviar datos a Google Sheets en segundo plano
+      // 1. Registrar entrada en Google Sheets
       const urlScript = `${URL_GOOGLE_SHEETS}?id=${encodeURIComponent(datosEscaneados.id)}&nombre=${encodeURIComponent(datosEscaneados.nombre)}&trabajo=${trabajo}`;
       fetch(urlScript, { mode: 'no-cors' });
 
-      // 2. Redireccionar a la app de WhatsApp en el iPhone
+      // 2. Redirigir a WhatsApp
       let mensaje = "";
       if (trabajo === "SI") {
         mensaje = `Estimado tutor, le informamos que el alumno ${datosEscaneados.nombre} asistió a clase hoy y SÍ trabajó en sus actividades.`;
