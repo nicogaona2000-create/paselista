@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Pase de Lista con QR</title>
-  <!-- Librería html5-qrcode para lectura de cámara -->
+  <!-- Librería html5-qrcode -->
   <script src="https://unpkg.com/html5-qrcode"></script>
   <style>
     body {
@@ -95,7 +95,7 @@
   </div>
 
   <script>
-    // URL de tu Web App de Google Apps Script
+    // URL exacta de tu Google Apps Script
     const URL_GOOGLE_SHEETS = "https://script.google.com/macros/s/AKfycbzrJB-1BvHgdPWqAJx0_itQtkDaUKI8uMYuDOMHhQu7NA-xCc0dQNUlOpJb6NO7HfLEDg/exec";
 
     let datosEscaneados = {
@@ -139,14 +139,13 @@
       document.getElementById('btnEnviar').disabled = false;
     }
 
-    // Configuración e inicialización del lector en el navegador del iPhone
+    // Configuración de la cámara para iPhone
     const html5QrCode = new Html5Qrcode("reader");
     const config = { 
       fps: 10, 
       qrbox: { width: 250, height: 250 } 
     };
 
-    // Cámara trasera predeterminada (facingMode: environment)
     html5QrCode.start(
       { facingMode: "environment" }, 
       config, 
@@ -156,24 +155,35 @@
       document.getElementById('infoAlumno').innerText = "Error: Da permisos de cámara a Safari.";
     });
 
-    // Enviar a Google Sheets y redirigir a WhatsApp
+    // Envío a Google Sheets asegurando que la petición salga antes de redirigir
     function registrarYEnviar() {
       const trabajo = document.getElementById('chkTrabajo').checked ? "SI" : "NO";
       
-      // 1. Envío de datos a Apps Script (en segundo plano)
-      const urlScript = `${URL_GOOGLE_SHEETS}?id=${encodeURIComponent(datosEscaneados.id)}&nombre=${encodeURIComponent(datosEscaneados.nombre)}&trabajo=${trabajo}`;
-      fetch(urlScript, { mode: 'no-cors' });
+      // Deshabilitar botón temporalmente para evitar dobles clics
+      document.getElementById('btnEnviar').disabled = true;
+      document.getElementById('infoAlumno').innerText = "Guardando en Sheets...";
 
-      // 2. Redirección a la app de WhatsApp en iOS
-      let mensaje = "";
-      if (trabajo === "SI") {
-        mensaje = `Estimado tutor, le informamos que el alumno ${datosEscaneados.nombre} asistió a clase hoy y SÍ trabajó en sus actividades.`;
-      } else {
-        mensaje = `Estimado tutor, le informamos que el alumno ${datosEscaneados.nombre} asistió a clase hoy, pero NO cumplió con sus actividades.`;
-      }
+      // 1. Construcción de la URL de envío
+      const urlScript = `${URL_GOOGLE_SHEETS}?id=${encodeURIComponent(datosEscaneados.id)}&nombre=${encodeURIComponent(datosEscaneados.nombre)}&trabajo=${encodeURIComponent(trabajo)}`;
 
-      const urlWhatsApp = `whatsapp://send?phone=${datosEscaneados.telefono}&text=${encodeURIComponent(mensaje)}`;
-      window.location.href = urlWhatsApp;
+      // 2. Usar Image beacon para forzar el envío en iOS sin bloqueo CORS
+      const img = new Image();
+      img.src = urlScript;
+
+      // 3. Pequeña pausa de 300ms para asegurar el despacho del paquete de datos antes de abrir WhatsApp
+      setTimeout(() => {
+        let mensaje = "";
+        if (trabajo === "SI") {
+          mensaje = `Estimado tutor, le informamos que el alumno ${datosEscaneados.nombre} asistió a clase hoy y SÍ trabajó en sus actividades.`;
+        } else {
+          mensaje = `Estimado tutor, le informamos que el alumno ${datosEscaneados.nombre} asistió a clase hoy, pero NO cumplió con sus actividades.`;
+        }
+
+        const urlWhatsApp = `whatsapp://send?phone=${datosEscaneados.telefono}&text=${encodeURIComponent(mensaje)}`;
+        
+        document.getElementById('infoAlumno').innerText = "¡Registrado! Abriendo WhatsApp...";
+        window.location.href = urlWhatsApp;
+      }, 350);
     }
   </script>
 
