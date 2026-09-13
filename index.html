@@ -153,12 +153,14 @@
       document.getElementById('btnEnviar').disabled = true;
       document.getElementById('infoAlumno').innerText = "⏳ Guardando en Sheets...";
 
+      // Construcción de la URL de registro
       const urlScript = `${URL_GOOGLE_SHEETS}?id=${encodeURIComponent(datosEscaneados.id)}&nombre=${encodeURIComponent(datosEscaneados.nombre)}&trabajo=${encodeURIComponent(trabajo)}&clave=${encodeURIComponent(CLAVE_SECRETA)}`;
 
-      // Enviar solicitud en segundo plano
-      fetch(urlScript, { mode: 'no-cors' });
+      // Petición indestructible para Safari en iOS mediante un objeto Image en memoria
+      const beacon = new Image();
+      beacon.src = urlScript;
 
-      // Espera de 800 ms para asegurar la entrega del dato antes de la redirección a WhatsApp
+      // Pausa de 1.2 segundos para asegurar que el procesador del iPhone alcance a despachar la solicitud HTTP antes de cambiar a la app de WhatsApp
       setTimeout(() => {
         let mensaje = "";
         if (trabajo === "SI") {
@@ -171,7 +173,7 @@
         
         document.getElementById('infoAlumno').innerText = "¡Registrado! Abriendo WhatsApp...";
         window.location.href = urlWhatsApp;
-      }, 800);
+      }, 1200);
     }
   </script>
 
