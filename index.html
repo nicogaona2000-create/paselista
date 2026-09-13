@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pase de Lista con QR</title>
-  <!-- Librería html5-qrcode -->
+  <title>Pase de Lista - SEG</title>
+  <!-- Librería QR -->
   <script src="https://unpkg.com/html5-qrcode"></script>
   <style>
     body {
@@ -95,8 +95,8 @@
   </div>
 
   <script>
-    // URL exacta de tu Google Apps Script
     const URL_GOOGLE_SHEETS = "https://script.google.com/macros/s/AKfycbzrJB-1BvHgdPWqAJx0_itQtkDaUKI8uMYuDOMHhQu7NA-xCc0dQNUlOpJb6NO7HfLEDg/exec";
+    const CLAVE_SECRETA = "SEG_2026_LISTA";
 
     let datosEscaneados = {
       id: "",
@@ -106,7 +106,6 @@
 
     // Procesar la lectura del QR (8 campos)
     function onScanSuccess(decodedText, decodedResult) {
-      // Estructura: Grado,Grupo,Núm,Nombre1,Nombre2,ApellidoP,ApellidoM,Teléfono
       const partes = decodedText.split(',');
       
       if (partes.length >= 8) {
@@ -135,16 +134,12 @@
         document.getElementById('infoAlumno').innerText = `Datos: ${decodedText}`;
       }
 
-      // Activar botón de envío
       document.getElementById('btnEnviar').disabled = false;
     }
 
-    // Configuración de la cámara para iPhone
+    // Configuración de la cámara trasera para iPhone
     const html5QrCode = new Html5Qrcode("reader");
-    const config = { 
-      fps: 10, 
-      qrbox: { width: 250, height: 250 } 
-    };
+    const config = { fps: 10, qrbox: { width: 250, height: 250 } };
 
     html5QrCode.start(
       { facingMode: "environment" }, 
@@ -155,22 +150,20 @@
       document.getElementById('infoAlumno').innerText = "Error: Da permisos de cámara a Safari.";
     });
 
-    // Envío a Google Sheets asegurando que la petición salga antes de redirigir
+    // Envío garantizado a Sheets y apertura de WhatsApp
     function registrarYEnviar() {
       const trabajo = document.getElementById('chkTrabajo').checked ? "SI" : "NO";
       
-      // Deshabilitar botón temporalmente para evitar dobles clics
       document.getElementById('btnEnviar').disabled = true;
-      document.getElementById('infoAlumno').innerText = "Guardando en Sheets...";
+      document.getElementById('infoAlumno').innerText = "⏳ Guardando en Sheets...";
 
-      // 1. Construcción de la URL de envío
-      const urlScript = `${URL_GOOGLE_SHEETS}?id=${encodeURIComponent(datosEscaneados.id)}&nombre=${encodeURIComponent(datosEscaneados.nombre)}&trabajo=${encodeURIComponent(trabajo)}`;
+      // Enviar datos vía URL con clave secreta
+      const urlScript = `${URL_GOOGLE_SHEETS}?id=${encodeURIComponent(datosEscaneados.id)}&nombre=${encodeURIComponent(datosEscaneados.nombre)}&trabajo=${encodeURIComponent(trabajo)}&clave=${encodeURIComponent(CLAVE_SECRETA)}`;
 
-      // 2. Usar Image beacon para forzar el envío en iOS sin bloqueo CORS
-      const img = new Image();
-      img.src = urlScript;
+      // Petición asíncrona
+      fetch(urlScript, { mode: 'no-cors' });
 
-      // 3. Pequeña pausa de 300ms para asegurar el despacho del paquete de datos antes de abrir WhatsApp
+      // Esperar 800 milisegundos para que el paquete salga de Safari antes de cambiar a WhatsApp
       setTimeout(() => {
         let mensaje = "";
         if (trabajo === "SI") {
@@ -183,7 +176,7 @@
         
         document.getElementById('infoAlumno').innerText = "¡Registrado! Abriendo WhatsApp...";
         window.location.href = urlWhatsApp;
-      }, 350);
+      }, 800);
     }
   </script>
 
