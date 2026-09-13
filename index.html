@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pase de Lista - iPhone</title>
+  <!-- Librería gratuita para escanear QR en navegadores -->
+  <script src="https://unpkg.com/html5-qrcode"></script>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      text-align: center;
+      padding: 15px;
+      background-color: #f2f2f7;
+      color: #1c1c1e;
+    }
+    h2 { margin-bottom: 5px; }
+    #reader {
+      width: 100%;
+      max-width: 400px;
+      margin: 15px auto;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      background: #fff;
+    }
+    .card {
+      background: #fff;
+      padding: 20px;
+      border-radius: 12px;
+      max-width: 400px;
+      margin: 0 auto;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+    .info-label {
+      font-size: 1.1em;
+      font-weight: 600;
+      margin-bottom: 15px;
+      color: #007aff;
+    }
+    .checkbox-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      font-size: 1.1em;
+      margin-bottom: 20px;
+    }
+    .checkbox-container input {
+      width: 22px;
+      height: 22px;
+    }
+    .btn-submit {
+      background-color: #34c759;
+      color: white;
+      border: none;
+      padding: 15px 25px;
+      font-size: 1em;
+      font-weight: bold;
+      border-radius: 10px;
+      width: 100%;
+      cursor: pointer;
+    }
+    .btn-submit:disabled {
+      background-color: #aeaeb2;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>Pase de Lista con QR</h2>
+  
+  <!-- Contenedor del video de la cámara -->
+  <div id="reader"></div>
+
+  <div class="card">
+    <div id="infoAlumno" class="info-label">Escanea un código QR...</div>
+    
+    <div class="checkbox-container">
+      <input type="checkbox" id="chkTrabajo" checked>
+      <label for="chkTrabajo">¿Trabajó en clase?</label>
+    </div>
+
+    <button id="btnEnviar" class="btn-submit" onclick="registrarYEnviar()" disabled>
+      📩 Guardar y Abrir WhatsApp
+    </button>
+  </div>
+
+  <script>
+    // Configurar URL de Google Apps Script
+    const URL_GOOGLE_SHEETS = "TU_URL_DE_GOOGLE_APPS_SCRIPT_AQUI";
+
+    let datosEscaneados = {
+      id: "",
+      nombre: "",
+      telefono: ""
+    };
+
+    // Función que procesa la lectura del QR
+    function onScanSuccess(decodedText, decodedResult) {
+      // Asumiendo formato de QR: ID,Nombre,Telefono (Ej: ALU01,Juan Perez,5214771234567)
+      const partes = decodedText.split(',');
+      
+      if (partes.length >= 3) {
+        datosEscaneados.id = partes[0].trim();
+        datosEscaneados.nombre = partes[1].trim();
+        datosEscaneados.telefono = partes[2].trim();
+        document.getElementById('infoAlumno').innerText = `Alumno: ${datosEscaneados.nombre}`;
+      } else {
+        datosEscaneados.id = decodedText.trim();
+        datosEscaneados.nombre = decodedText.trim();
+        datosEscaneados.telefono = "";
+        document.getElementById('infoAlumno').innerText = `ID: ${datosEscaneados.id}`;
+      }
+
+      // Habilitar botón de envío
+      document.getElementById('btnEnviar').disabled = false;
+    }
+
+    // Inicializar el escáner de la cámara en el navegador
+    const html5QrcodeScanner = new Html5QrcodeScanner(
+      "reader", { fps: 10, qrbox: { width: 250, height: 250 } }, false
+    );
+    html5QrcodeScanner.render(onScanSuccess);
+
+    // Función para enviar a Sheets y abrir WhatsApp en iOS
+    function registrarYEnviar() {
+      const trabajo = document.getElementById('chkTrabajo').checked ? "SI" : "NO";
+      
+      // 1. Petición en segundo plano a Google Sheets
+      const urlScript = `${URL_GOOGLE_SHEETS}?id=${encodeURIComponent(datosEscaneados.id)}&nombre=${encodeURIComponent(datosEscaneados.nombre)}&trabajo=${trabajo}`;
+      fetch(urlScript, { mode: 'no-cors' });
+
+      // 2. Redireccionar a la app de WhatsApp en el iPhone
+      let mensaje = "";
+      if (trabajo === "SI") {
+        mensaje = `Estimado tutor, le informamos que el alumno ${datosEscaneados.nombre} asistió a clase hoy y SÍ trabajó en sus actividades.`;
+      } else {
+        mensaje = `Estimado tutor, le informamos que el alumno ${datosEscaneados.nombre} asistió a clase hoy, pero NO cumplió con sus actividades.`;
+      }
+
+      const urlWhatsApp = `whatsapp://send?phone=${datosEscaneados.telefono}&text=${encodeURIComponent(mensaje)}`;
+      window.location.href = urlWhatsApp;
+    }
+  </script>
+
+</body>
+</html>
