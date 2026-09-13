@@ -74,7 +74,7 @@
   <div id="reader"></div>
 
   <div class="card">
-    <div id="infoAlumno" class="info-label">Escanea un código QR...</div>
+    <div id="infoAlumno" class="info-label">Apunta al código QR...</div>
     
     <div class="checkbox-container">
       <input type="checkbox" id="chkTrabajo" checked>
@@ -87,8 +87,8 @@
   </div>
 
   <script>
-    // Configurar URL de Google Apps Script
-    const URL_GOOGLE_SHEETS = "TU_URL_DE_GOOGLE_APPS_SCRIPT_AQUI";
+    // URL de tu Google Apps Script ya integrada
+    const URL_GOOGLE_SHEETS = "https://script.google.com/macros/s/AKfycbzrJB-1BvHgdPWqAJx0_itQtkDaUKI8uMYuDOMHhQu7NA-xCc0dQNUlOpJb6NO7HfLEDg/exec";
 
     let datosEscaneados = {
       id: "",
@@ -98,7 +98,7 @@
 
     // Función que procesa la lectura del QR
     function onScanSuccess(decodedText, decodedResult) {
-      // Asumiendo formato de QR: ID,Nombre,Telefono (Ej: ALU01,Juan Perez,5214771234567)
+      // Formato esperado en el QR: ID,Nombre,Telefono (Ejemplo: ALU01,Juan Pérez,524771234567)
       const partes = decodedText.split(',');
       
       if (partes.length >= 3) {
@@ -110,24 +110,35 @@
         datosEscaneados.id = decodedText.trim();
         datosEscaneados.nombre = decodedText.trim();
         datosEscaneados.telefono = "";
-        document.getElementById('infoAlumno').innerText = `ID: ${datosEscaneados.id}`;
+        document.getElementById('infoAlumno').innerText = `ID Detectado: ${datosEscaneados.id}`;
       }
 
-      // Habilitar botón de envío
+      // Habilitar el botón de envío
       document.getElementById('btnEnviar').disabled = false;
     }
 
-    // Inicializar el escáner de la cámara en el navegador
-    const html5QrcodeScanner = new Html5QrcodeScanner(
-      "reader", { fps: 10, qrbox: { width: 250, height: 250 } }, false
-    );
-    html5QrcodeScanner.render(onScanSuccess);
+    // Configuración optimizada de la cámara para Safari en iPhone
+    const html5QrCode = new Html5Qrcode("reader");
+    const config = { 
+      fps: 10, 
+      qrbox: { width: 250, height: 250 } 
+    };
 
-    // Función para enviar a Sheets y abrir WhatsApp en iOS
+    // Iniciar automáticamente la cámara trasera (environment)
+    html5QrCode.start(
+      { facingMode: "environment" }, 
+      config, 
+      onScanSuccess
+    ).catch(err => {
+      console.error("Error al iniciar la cámara: ", err);
+      document.getElementById('infoAlumno').innerText = "Error: Permite el acceso a la cámara en Safari.";
+    });
+
+    // Función para registrar en Sheets y abrir WhatsApp
     function registrarYEnviar() {
       const trabajo = document.getElementById('chkTrabajo').checked ? "SI" : "NO";
       
-      // 1. Petición en segundo plano a Google Sheets
+      // 1. Enviar datos a Google Sheets en segundo plano
       const urlScript = `${URL_GOOGLE_SHEETS}?id=${encodeURIComponent(datosEscaneados.id)}&nombre=${encodeURIComponent(datosEscaneados.nombre)}&trabajo=${trabajo}`;
       fetch(urlScript, { mode: 'no-cors' });
 
