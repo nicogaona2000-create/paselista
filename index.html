@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Pase de Lista - SEG</title>
-  <!-- Librería QR -->
+  <!-- Librería para escanear QR -->
   <script src="https://unpkg.com/html5-qrcode"></script>
   <style>
     body {
@@ -78,7 +78,6 @@
 
   <h2>Pase de Lista con QR</h2>
   
-  <!-- Visor de la Cámara -->
   <div id="reader"></div>
 
   <div class="card">
@@ -96,7 +95,7 @@
 
   <script>
     const URL_GOOGLE_SHEETS = "https://script.google.com/macros/s/AKfycbzrJB-1BvHgdPWqAJx0_itQtkDaUKI8uMYuDOMHhQu7NA-xCc0dQNUlOpJb6NO7HfLEDg/exec";
-    const CLAVE_SECRETA = "SEG_2026_LISTA";
+    const CLAVE_SECRETA = "PASO123";
 
     let datosEscaneados = {
       id: "",
@@ -104,7 +103,6 @@
       telefono: ""
     };
 
-    // Procesar la lectura del QR (8 campos)
     function onScanSuccess(decodedText, decodedResult) {
       const partes = decodedText.split(',');
       
@@ -137,7 +135,6 @@
       document.getElementById('btnEnviar').disabled = false;
     }
 
-    // Configuración de la cámara trasera para iPhone
     const html5QrCode = new Html5Qrcode("reader");
     const config = { fps: 10, qrbox: { width: 250, height: 250 } };
 
@@ -150,20 +147,18 @@
       document.getElementById('infoAlumno').innerText = "Error: Da permisos de cámara a Safari.";
     });
 
-    // Envío garantizado a Sheets y apertura de WhatsApp
     function registrarYEnviar() {
       const trabajo = document.getElementById('chkTrabajo').checked ? "SI" : "NO";
       
       document.getElementById('btnEnviar').disabled = true;
       document.getElementById('infoAlumno').innerText = "⏳ Guardando en Sheets...";
 
-      // Enviar datos vía URL con clave secreta
       const urlScript = `${URL_GOOGLE_SHEETS}?id=${encodeURIComponent(datosEscaneados.id)}&nombre=${encodeURIComponent(datosEscaneados.nombre)}&trabajo=${encodeURIComponent(trabajo)}&clave=${encodeURIComponent(CLAVE_SECRETA)}`;
 
-      // Petición asíncrona
+      // Enviar solicitud en segundo plano
       fetch(urlScript, { mode: 'no-cors' });
 
-      // Esperar 800 milisegundos para que el paquete salga de Safari antes de cambiar a WhatsApp
+      // Espera de 800 ms para asegurar la entrega del dato antes de la redirección a WhatsApp
       setTimeout(() => {
         let mensaje = "";
         if (trabajo === "SI") {
