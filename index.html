@@ -2,95 +2,243 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pase de Lista - NICO</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>PASE DE LISTA.- NICO</title>
   <!-- Librería para escanear QR -->
   <script src="https://unpkg.com/html5-qrcode"></script>
   <style>
+    :root {
+      --primary: #007aff;
+      --success: #34c759;
+      --bg-color: #f2f2f7;
+      --card-bg: #ffffff;
+      --text-main: #1c1c1e;
+      --text-muted: #8e8e93;
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      text-align: center;
-      padding: 15px;
-      background-color: #f2f2f7;
-      color: #1c1c1e;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-main);
       margin: 0;
+      padding: 20px 15px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
     }
-    h2 { 
-      margin-top: 15px;
-      margin-bottom: 5px; 
-      font-size: 1.4em;
+
+    .header {
+      text-align: center;
+      margin-bottom: 15px;
     }
+
+    .header h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin: 0;
+      color: var(--text-main);
+      letter-spacing: -0.5px;
+    }
+
+    .header p {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin: 4px 0 0 0;
+    }
+
+    /* Contenedor de la cámara */
+    #reader-container {
+      width: 100%;
+      max-width: 380px;
+      position: relative;
+      margin-bottom: 15px;
+    }
+
     #reader {
       width: 100%;
-      max-width: 400px;
-      margin: 15px auto;
-      border-radius: 12px;
+      border-radius: 20px;
       overflow: hidden;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-      background: #fff;
+      background: #000;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+      border: 3px solid #ffffff;
     }
+
+    /* Tarjeta principal */
     .card {
-      background: #fff;
+      background: var(--card-bg);
+      border-radius: 20px;
       padding: 20px;
-      border-radius: 12px;
-      max-width: 400px;
-      margin: 0 auto;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+      width: 100%;
+      max-width: 380px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
     }
-    .info-label {
-      font-size: 1.1em;
+
+    /* Badge del alumno */
+    .student-badge {
+      background-color: #f0f9ff;
+      border: 1px solid #bae6fd;
+      border-radius: 14px;
+      padding: 14px;
+      text-align: center;
+      transition: all 0.3s ease;
+    }
+
+    .student-badge.active {
+      background-color: #f0fdf4;
+      border-color: #bbf7d0;
+    }
+
+    .student-id {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--primary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 2px;
+    }
+
+    .student-name {
+      font-size: 1.1rem;
       font-weight: 600;
-      margin-bottom: 15px;
-      color: #007aff;
+      color: var(--text-main);
+      line-height: 1.3;
       word-break: break-word;
     }
-    .checkbox-container {
+
+    /* Toggle Switch iOS */
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 4px;
+    }
+
+    .toggle-label {
+      font-size: 1rem;
+      font-weight: 500;
+      color: var(--text-main);
+    }
+
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 51px;
+      height: 31px;
+    }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: #e9e9ea;
+      transition: .3s cubic-bezier(0.4, 0, 0.2, 1);
+      border-radius: 31px;
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 27px;
+      width: 27px;
+      left: 2px;
+      bottom: 2px;
+      background-color: white;
+      transition: .3s cubic-bezier(0.4, 0, 0.2, 1);
+      border-radius: 50%;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+
+    input:checked + .slider {
+      background-color: var(--success);
+    }
+
+    input:checked + .slider:before {
+      transform: translateX(20px);
+    }
+
+    /* Botón de envío */
+    .btn-submit {
+      background-color: var(--success);
+      color: white;
+      border: none;
+      padding: 16px;
+      font-size: 1.05rem;
+      font-weight: 600;
+      border-radius: 14px;
+      width: 100%;
+      cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 10px;
-      font-size: 1.1em;
-      margin-bottom: 20px;
+      gap: 8px;
+      box-shadow: 0 4px 12px rgba(52, 199, 89, 0.3);
+      transition: transform 0.1s ease, background-color 0.2s ease, opacity 0.2s;
     }
-    .checkbox-container input {
-      width: 22px;
-      height: 22px;
+
+    .btn-submit:active {
+      transform: scale(0.98);
     }
-    .btn-submit {
-      background-color: #34c759;
-      color: white;
-      border: none;
-      padding: 15px 25px;
-      font-size: 1em;
-      font-weight: bold;
-      border-radius: 10px;
-      width: 100%;
-      cursor: pointer;
-      transition: background-color 0.2s;
-    }
+
     .btn-submit:disabled {
       background-color: #aeaeb2;
+      box-shadow: none;
       cursor: not-allowed;
+      opacity: 0.7;
+    }
+
+    .status-msg {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      text-align: center;
+      margin-top: -5px;
     }
   </style>
 </head>
 <body>
 
-  <h2>Pase de Lista con QR</h2>
+  <div class="header">
+    <h1>PASE DE LISTA.- NICO</h1>
+    <p>Escáner de QR & Asistencia WhatsApp</p>
+  </div>
   
-  <div id="reader"></div>
+  <div id="reader-container">
+    <div id="reader"></div>
+  </div>
 
   <div class="card">
-    <div id="infoAlumno" class="info-label">Apunta al código QR del alumno...</div>
+    <div id="badgeAlumno" class="student-badge">
+      <div id="lblId" class="student-id">Esperando lectura...</div>
+      <div id="lblNombre" class="student-name">Apunta al código QR del alumno</div>
+    </div>
     
-    <div class="checkbox-container">
-      <input type="checkbox" id="chkTrabajo" checked>
-      <label for="chkTrabajo">¿Trabajó en clase?</label>
+    <div class="toggle-row">
+      <span class="toggle-label">¿Trabajó en clase?</span>
+      <label class="switch">
+        <input type="checkbox" id="chkTrabajo" checked>
+        <span class="slider"></span>
+      </label>
     </div>
 
     <button id="btnEnviar" class="btn-submit" onclick="registrarYEnviar()" disabled>
-      📩 Guardar y Abrir WhatsApp
+      <span>📩 Guardar y Abrir WhatsApp</span>
     </button>
+    
+    <div id="statusText" class="status-msg"></div>
   </div>
 
   <script>
@@ -105,6 +253,9 @@
 
     function onScanSuccess(decodedText, decodedResult) {
       const partes = decodedText.split(',');
+      const badge = document.getElementById('badgeAlumno');
+      const lblId = document.getElementById('lblId');
+      const lblNombre = document.getElementById('lblNombre');
       
       if (partes.length >= 8) {
         const grado = partes[0].trim();
@@ -124,19 +275,23 @@
         datosEscaneados.nombre = nombreCompleto;
         datosEscaneados.telefono = telefono;
 
-        document.getElementById('infoAlumno').innerText = `${idAlumno} - ${nombreCompleto}`;
+        lblId.innerText = `ALUMNO DETECTADO (${idAlumno})`;
+        lblNombre.innerText = nombreCompleto;
       } else {
         datosEscaneados.id = "QR General";
         datosEscaneados.nombre = decodedText.trim();
         datosEscaneados.telefono = "";
-        document.getElementById('infoAlumno').innerText = `Datos: ${decodedText}`;
+        lblId.innerText = "CÓDIGO LEÍDO";
+        lblNombre.innerText = decodedText;
       }
 
+      badge.classList.add('active');
       document.getElementById('btnEnviar').disabled = false;
+      document.getElementById('statusText').innerText = "Listo para enviar registro.";
     }
 
     const html5QrCode = new Html5Qrcode("reader");
-    const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+    const config = { fps: 10, qrbox: { width: 220, height: 220 } };
 
     html5QrCode.start(
       { facingMode: "environment" }, 
@@ -144,23 +299,25 @@
       onScanSuccess
     ).catch(err => {
       console.error("Error en cámara: ", err);
-      document.getElementById('infoAlumno').innerText = "Error: Da permisos de cámara a Safari.";
+      document.getElementById('lblNombre').innerText = "Ocurrió un error al activar la cámara en Safari.";
     });
 
     function registrarYEnviar() {
       const trabajo = document.getElementById('chkTrabajo').checked ? "SI" : "NO";
+      const btn = document.getElementById('btnEnviar');
+      const status = document.getElementById('statusText');
       
-      document.getElementById('btnEnviar').disabled = true;
-      document.getElementById('infoAlumno').innerText = "⏳ Guardando en Sheets...";
+      btn.disabled = true;
+      status.innerText = "⏳ Guardando datos en Google Sheets...";
 
       // Construcción de la URL de registro
       const urlScript = `${URL_GOOGLE_SHEETS}?id=${encodeURIComponent(datosEscaneados.id)}&nombre=${encodeURIComponent(datosEscaneados.nombre)}&trabajo=${encodeURIComponent(trabajo)}&clave=${encodeURIComponent(CLAVE_SECRETA)}`;
 
-      // Petición indestructible para Safari en iOS mediante un objeto Image en memoria
+      // Petición Beacon vía objeto Image para iOS / Safari
       const beacon = new Image();
       beacon.src = urlScript;
 
-      // Pausa de 1.2 segundos para asegurar que el procesador del iPhone alcance a despachar la solicitud HTTP antes de cambiar a la app de WhatsApp
+      // Espera de 1.2 segundos para asegurar el envío de la red
       setTimeout(() => {
         let mensaje = "";
         if (trabajo === "SI") {
@@ -171,7 +328,7 @@
 
         const urlWhatsApp = `whatsapp://send?phone=${datosEscaneados.telefono}&text=${encodeURIComponent(mensaje)}`;
         
-        document.getElementById('infoAlumno').innerText = "¡Registrado! Abriendo WhatsApp...";
+        status.innerText = "¡Registrado con éxito! Abriendo WhatsApp...";
         window.location.href = urlWhatsApp;
       }, 1200);
     }
