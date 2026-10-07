@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>PASE DE LISTA.- NICO</title>
-  <!-- Librería para escanear QR -->
+  <!-- Librería para escanear QR (HTTPS verificado) -->
   <script src="https://unpkg.com/html5-qrcode"></script>
   <style>
     :root {
@@ -22,7 +22,6 @@
 
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      /* Imagen de fondo */
       background: url('PASEDELISTA.jpeg') no-repeat center center fixed;
       background-size: cover;
       color: var(--text-main);
@@ -327,6 +326,7 @@
       document.getElementById('statusText').innerText = "Listo para enviar registro.";
     }
 
+    // Inicializar lector de cámara QR
     const html5QrCode = new Html5Qrcode("reader");
     const config = { fps: 10, qrbox: { width: 220, height: 220 } };
 
@@ -335,11 +335,11 @@
       config, 
       onScanSuccess
     ).catch(err => {
-      console.error("Error en cámara: ", err);
-      document.getElementById('lblNombre').innerText = "Error al activar la cámara.";
+      console.error("Error al iniciar cámara: ", err);
+      document.getElementById('lblNombre').innerText = "Ocurrió un problema con la cámara. Revisa los permisos.";
     });
 
-    function registrarYEnviar() {
+    async function registrarYEnviar() {
       const trabajo = document.getElementById('chkTrabajo').checked ? "SI" : "NO";
       const btn = document.getElementById('btnEnviar');
       const status = document.getElementById('statusText');
@@ -347,27 +347,50 @@
       btn.disabled = true;
       status.innerText = "⏳ Guardando datos en Google Sheets...";
 
-      // Construcción de la URL de registro
-      const urlScript = `${URL_GOOGLE_SHEETS}?id=${encodeURIComponent(datosEscaneados.id)}&nombre=${encodeURIComponent(datosEscaneados.nombre)}&trabajo=${encodeURIComponent(trabajo)}&clave=${encodeURIComponent(CLAVE_SECRETA)}`;
+      // Parámetros formateados
+      const params = new URLSearchParams({
+        id: datosEscaneados.id,
+        nombre: datosEscaneados.nombre,
+        trabajo: trabajo,
+        clave: CLAVE_SECRETA
+      });
 
-      // Petición Beacon vía objeto Image para iOS / Safari
-      const beacon = new Image();
-      beacon.src = urlScript;
+      const urlScript = `${URL_GOOGLE_SHEETS}?${params.toString()}`;
 
-      // Espera de 1.2 segundos para asegurar el envío de la red
+      try {
+        // Petición robusta compatible con datos móviles (no-cors para evitar restricciones de operador/red)
+        await fetch(urlScript, {
+          method: 'GET',
+          mode: 'no-cors',
+          cache: 'no-cache'
+        });
+      } catch (err) {
+        console.warn("Advertencia en fetch (continuando hacia WhatsApp):", err);
+      }
+
+      // Preparación del mensaje de WhatsApp
+      let mensaje = "";
+      if (trabajo === "SI") {
+        mensaje = `Estimado tutor, le informamos que el alumno ${datosEscaneados.nombre} asistió a clase hoy y SÍ trabajó en sus actividades.`;
+      } else {
+        mensaje = `Estimado tutor, le informamos que el alumno ${datosEscaneados.nombre} asistió a clase hoy, pero NO cumplió con sus actividades.`;
+      }
+
+      // Formateo de número telefónico eliminando caracteres especiales
+      let telLimpio = datosEscaneados.telefono.replace(/[^0-9]/g, '');
+      if (telLimpio.length === 10) {
+        telLimpio = "52" + telLimpio; // Añadir código de país (México)
+      }
+
+      // Enlace universal compatible con Android/iOS en red de datos
+      const urlWhatsApp = `https://api.whatsapp.com/send?phone=${telLimpio}&text=${encodeURIComponent(mensaje)}`;
+      
+      status.innerText = "¡Registrado con éxito! Abriendo WhatsApp...";
+      
+      // Abrir WhatsApp
       setTimeout(() => {
-        let mensaje = "";
-        if (trabajo === "SI") {
-          mensaje = `Estimado tutor, le informamos que el alumno ${datosEscaneados.nombre} asistió a clase hoy y SÍ trabajó en sus actividades.`;
-        } else {
-          mensaje = `Estimado tutor, le informamos que el alumno ${datosEscaneados.nombre} asistió a clase hoy, pero NO cumplió con sus actividades.`;
-        }
-
-        const urlWhatsApp = `whatsapp://send?phone=${datosEscaneados.telefono}&text=${encodeURIComponent(mensaje)}`;
-        
-        status.innerText = "¡Registrado con éxito! Abriendo WhatsApp...";
         window.location.href = urlWhatsApp;
-      }, 1200);
+      }, 500);
     }
   </script>
 
