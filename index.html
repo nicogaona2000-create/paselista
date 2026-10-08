@@ -3,14 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>PASE DE LISTA.- NICO</title>
-  <!-- Librería para escanear QR (HTTPS verificado) -->
-  <script src="https://unpkg.com/html5-qrcode"></script>
+  <title>PASE DE LISTA - NICO</title>
+  <!-- Librería para escanear QR -->
+  <script src="https://unpkg.com/html5-qrcode" defer></script>
   <style>
     :root {
       --primary: #FF6B6B;
       --success: #2ECC71;
       --accent: #4D96FF;
+      --warning: #FFD93D;
       --text-main: #2D3436;
       --text-muted: #636E72;
     }
@@ -41,7 +42,7 @@
       border-radius: 25px;
       margin-bottom: 20px;
       box-shadow: 0 8px 20px rgba(0,0,0,0.15);
-      border: 3px solid #FFD93D;
+      border: 3px solid var(--warning);
       text-align: center;
     }
 
@@ -49,7 +50,7 @@
       font-size: 1.8rem;
       font-weight: 900;
       margin: 0;
-      background: linear-gradient(45deg, #FF6B6B, #4D96FF, #FFD93D, #6BCB77);
+      background: linear-gradient(45deg, var(--primary), var(--accent), var(--warning), var(--success));
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       letter-spacing: -0.5px;
@@ -58,11 +59,11 @@
     .header-banner p {
       font-size: 0.9rem;
       font-weight: 600;
-      color: #4D96FF;
+      color: var(--accent);
       margin: 2px 0 0 0;
     }
 
-    /* Contenedor principal de dos columnas */
+    /* Contenedor principal */
     .main-container {
       display: flex;
       flex-direction: row;
@@ -74,8 +75,9 @@
       max-width: 900px;
     }
 
-    /* Columna Izquierda: Cámara */
-    .scanner-column {
+    /* Columnas */
+    .scanner-column,
+    .control-column {
       flex: 1;
       min-width: 300px;
       max-width: 420px;
@@ -87,14 +89,7 @@
       overflow: hidden;
       background: #000;
       box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
-      border: 4px solid #FFD93D;
-    }
-
-    /* Columna Derecha: Tarjeta de Control */
-    .control-column {
-      flex: 1;
-      min-width: 300px;
-      max-width: 420px;
+      border: 4px solid var(--warning);
     }
 
     .card {
@@ -112,7 +107,7 @@
     /* Badge visual del alumno */
     .student-badge {
       background: #E8F4F8;
-      border: 2px dashed #4D96FF;
+      border: 2px dashed var(--accent);
       border-radius: 16px;
       padding: 16px;
       text-align: center;
@@ -121,14 +116,14 @@
 
     .student-badge.active {
       background: #E8F8F0;
-      border-color: #2ECC71;
+      border-color: var(--success);
       border-style: solid;
     }
 
     .student-id {
       font-size: 0.85rem;
       font-weight: 800;
-      color: #FF6B6B;
+      color: var(--primary);
       text-transform: uppercase;
       letter-spacing: 0.5px;
       margin-bottom: 4px;
@@ -155,7 +150,7 @@
     .toggle-label {
       font-size: 1.05rem;
       font-weight: 700;
-      color: #2D3436;
+      color: var(--text-main);
     }
 
     .switch {
@@ -175,7 +170,7 @@
       position: absolute;
       cursor: pointer;
       top: 0; left: 0; right: 0; bottom: 0;
-      background-color: #FF6B6B;
+      background-color: var(--primary);
       transition: .3s cubic-bezier(0.4, 0, 0.2, 1);
       border-radius: 32px;
     }
@@ -194,16 +189,16 @@
     }
 
     input:checked + .slider {
-      background-color: #2ECC71;
+      background-color: var(--success);
     }
 
     input:checked + .slider:before {
       transform: translateX(22px);
     }
 
-    /* Botón bonito y vibrante */
+    /* Botón */
     .btn-submit {
-      background: linear-gradient(135deg, #2ECC71, #27AE60);
+      background: linear-gradient(135deg, var(--success), #27AE60);
       color: white;
       border: none;
       padding: 18px;
@@ -234,26 +229,26 @@
     .status-msg {
       font-size: 0.9rem;
       font-weight: 600;
-      color: #636E72;
+      color: var(--text-muted);
       text-align: center;
     }
   </style>
 </head>
 <body>
 
-  <div class="header-banner">
-    <h1>PASE DE LISTA.- NICO</h1>
-    <p>Escáner QR & Notificación WhatsApp</p>
-  </div>
+  <header class="header-banner">
+    <h1>PASE DE LISTA - NICO</h1>
+    <p>Escáner QR &amp; Notificación WhatsApp</p>
+  </header>
   
-  <div class="main-container">
+  <main class="main-container">
     <!-- Columna Izquierda: Escáner QR -->
-    <div class="scanner-column">
+    <section class="scanner-column">
       <div id="reader"></div>
-    </div>
+    </section>
 
     <!-- Columna Derecha: Cuadro de Envíos y Datos -->
-    <div class="control-column">
+    <section class="control-column">
       <div class="card">
         <div id="badgeAlumno" class="student-badge">
           <div id="lblId" class="student-id">ESPERANDO LECTURA...</div>
@@ -262,137 +257,138 @@
         
         <div class="toggle-row">
           <span class="toggle-label">¿Trabajó en clase?</span>
-          <label class="switch">
+          <label class="switch" aria-label="Indicador si trabajó en clase">
             <input type="checkbox" id="chkTrabajo" checked>
             <span class="slider"></span>
           </label>
         </div>
 
-        <button id="btnEnviar" class="btn-submit" onclick="registrarYEnviar()" disabled>
+        <button id="btnEnviar" class="btn-submit" disabled>
           <span>📩 Guardar y Abrir WhatsApp</span>
         </button>
         
         <div id="statusText" class="status-msg"></div>
       </div>
-    </div>
-  </div>
+    </section>
+  </main>
 
   <script>
-    const URL_GOOGLE_SHEETS = "https://script.google.com/macros/s/AKfycbzrJB-1BvHgdPWqAJx0_itQtkDaUKI8uMYuDOMHhQu7NA-xCc0dQNUlOpJb6NO7HfLEDg/exec";
-    const CLAVE_SECRETA = "PASO123";
-
-    let datosEscaneados = {
-      id: "",
-      nombre: "",
-      telefono: ""
+    const CONFIG = {
+      URL_GOOGLE_SHEETS: "https://script.google.com/macros/s/AKfycbzrJB-1BvHgdPWqAJx0_itQtkDaUKI8uMYuDOMHhQu7NA-xCc0dQNUlOpJb6NO7HfLEDg/exec",
+      CLAVE_SECRETA: "PASO123",
+      PAIS_CODIGO: "52"
     };
 
-    function onScanSuccess(decodedText, decodedResult) {
+    let datosEscaneados = { id: "", nombre: "", telefono: "" };
+    let isProcessing = false;
+
+    // Elementos del DOM
+    const badge = document.getElementById('badgeAlumno');
+    const lblId = document.getElementById('lblId');
+    const lblNombre = document.getElementById('lblNombre');
+    const btnEnviar = document.getElementById('btnEnviar');
+    const statusText = document.getElementById('statusText');
+    const chkTrabajo = document.getElementById('chkTrabajo');
+
+    function onScanSuccess(decodedText) {
+      if (isProcessing) return; // Evitar múltiples lecturas seguidas
+
       const partes = decodedText.split(',');
-      const badge = document.getElementById('badgeAlumno');
-      const lblId = document.getElementById('lblId');
-      const lblNombre = document.getElementById('lblNombre');
       
       if (partes.length >= 8) {
-        const grado = partes[0].trim();
-        const grupo = partes[1].trim();
-        const num = partes[2].trim();
-        const nombre1 = partes[3].trim();
-        const nombre2 = partes[4].trim();
-        const apPaterno = partes[5].trim();
-        const apMaterno = partes[6].trim();
-        const telefono = partes[7].trim();
+        const [grado, grupo, num, nombre1, nombre2, apPaterno, apMaterno, telefono] = partes.map(p => p.trim());
+        const nombre2Texto = nombre2 ? `${nombre2} ` : '';
+        
+        datosEscaneados = {
+          id: `${grado}°"${grupo}" #${num}`,
+          nombre: `${nombre1} ${nombre2Texto}${apPaterno} ${apMaterno}`.trim(),
+          telefono: telefono
+        };
 
-        const nombre2Texto = nombre2 ? nombre2 + ' ' : '';
-        const nombreCompleto = `${nombre1} ${nombre2Texto}${apPaterno} ${apMaterno}`.trim();
-        const idAlumno = `${grado}°"${grupo}" #${num}`;
-
-        datosEscaneados.id = idAlumno;
-        datosEscaneados.nombre = nombreCompleto;
-        datosEscaneados.telefono = telefono;
-
-        lblId.innerText = `ALUMNO DETECTADO (${idAlumno})`;
-        lblNombre.innerText = nombreCompleto;
+        lblId.innerText = `ALUMNO DETECTADO (${datosEscaneados.id})`;
+        lblNombre.innerText = datosEscaneados.nombre;
       } else {
-        datosEscaneados.id = "QR General";
-        datosEscaneados.nombre = decodedText.trim();
-        datosEscaneados.telefono = "";
+        datosEscaneados = {
+          id: "QR General",
+          nombre: decodedText.trim(),
+          telefono: ""
+        };
+
         lblId.innerText = "CÓDIGO LEÍDO";
-        lblNombre.innerText = decodedText;
+        lblNombre.innerText = datosEscaneados.nombre;
       }
 
       badge.classList.add('active');
-      document.getElementById('btnEnviar').disabled = false;
-      document.getElementById('statusText').innerText = "Listo para enviar registro.";
+      btnEnviar.disabled = false;
+      statusText.innerText = "Listo para enviar registro.";
     }
 
-    // Inicializar lector de cámara QR
-    const html5QrCode = new Html5Qrcode("reader");
-    const config = { fps: 10, qrbox: { width: 220, height: 220 } };
+    // Inicializar el Lector QR tras la carga completa de la página
+    window.addEventListener('DOMContentLoaded', () => {
+      const html5QrCode = new Html5Qrcode("reader");
+      const qrConfig = { fps: 10, qrbox: { width: 220, height: 220 } };
 
-    html5QrCode.start(
-      { facingMode: "environment" }, 
-      config, 
-      onScanSuccess
-    ).catch(err => {
-      console.error("Error al iniciar cámara: ", err);
-      document.getElementById('lblNombre').innerText = "Ocurrió un problema con la cámara. Revisa los permisos.";
+      html5QrCode.start({ facingMode: "environment" }, qrConfig, onScanSuccess)
+        .catch(err => {
+          console.error("Error al iniciar cámara: ", err);
+          lblNombre.innerText = "Ocurrió un problema con la cámara. Revisa los permisos.";
+        });
+
+      btnEnviar.addEventListener('click', registrarYEnviar);
     });
 
     async function registrarYEnviar() {
-      const trabajo = document.getElementById('chkTrabajo').checked ? "SI" : "NO";
-      const btn = document.getElementById('btnEnviar');
-      const status = document.getElementById('statusText');
-      
-      btn.disabled = true;
-      status.innerText = "⏳ Guardando datos en Google Sheets...";
+      if (isProcessing) return;
+      isProcessing = true;
 
-      // Parámetros formateados
+      const trabajo = chkTrabajo.checked ? "SI" : "NO";
+      btnEnviar.disabled = true;
+      statusText.innerText = "⏳ Guardando datos en Google Sheets...";
+
       const params = new URLSearchParams({
         id: datosEscaneados.id,
         nombre: datosEscaneados.nombre,
         trabajo: trabajo,
-        clave: CLAVE_SECRETA
+        clave: CONFIG.CLAVE_SECRETA
       });
 
-      const urlScript = `${URL_GOOGLE_SHEETS}?${params.toString()}`;
-
       try {
-        // Petición robusta compatible con datos móviles (no-cors para evitar restricciones de operador/red)
-        await fetch(urlScript, {
+        await fetch(`${CONFIG.URL_GOOGLE_SHEETS}?${params.toString()}`, {
           method: 'GET',
           mode: 'no-cors',
           cache: 'no-cache'
         });
       } catch (err) {
-        console.warn("Advertencia en fetch (continuando hacia WhatsApp):", err);
+        console.warn("Advertencia al enviar a Sheets (continuando a WhatsApp):", err);
       }
 
-      // Preparación del mensaje de WhatsApp
-      let mensaje = "";
-      if (trabajo === "SI") {
-        mensaje = `Estimado tutor, le informamos que el alumno ${datosEscaneados.nombre} asistió a clase hoy y SÍ trabajó en sus actividades.`;
-      } else {
-        mensaje = `Estimado tutor, le informamos que el alumno ${datosEscaneados.nombre} asistió a clase hoy, pero NO cumplió con sus actividades.`;
-      }
+      // Generación del mensaje
+      const mensaje = trabajo === "SI"
+        ? `Estimado tutor, le informamos que el alumno ${datosEscaneados.nombre} asistió a clase hoy y SÍ trabajó en sus actividades.`
+        : `Estimado tutor, le informamos que el alumno ${datosEscaneados.nombre} asistió a clase hoy, pero NO cumplió con sus actividades.`;
 
-      // Formateo de número telefónico eliminando caracteres especiales
-      let telLimpio = datosEscaneados.telefono.replace(/[^0-9]/g, '');
+      // Limpieza de teléfono
+      let telLimpio = datosEscaneados.telefono.replace(/\D/g, '');
       if (telLimpio.length === 10) {
-        telLimpio = "52" + telLimpio; // Añadir código de país (México)
+        telLimpio = CONFIG.PAIS_CODIGO + telLimpio;
       }
 
-      // Enlace universal compatible con Android/iOS en red de datos
       const urlWhatsApp = `https://api.whatsapp.com/send?phone=${telLimpio}&text=${encodeURIComponent(mensaje)}`;
-      
-      status.innerText = "¡Registrado con éxito! Abriendo WhatsApp...";
-      
-      // Abrir WhatsApp
+      statusText.innerText = "¡Registrado con éxito! Abriendo WhatsApp...";
+
       setTimeout(() => {
         window.location.href = urlWhatsApp;
+        
+        // Reiniciar formulario para el siguiente alumno
+        setTimeout(() => {
+          isProcessing = false;
+          badge.classList.remove('active');
+          lblId.innerText = "ESPERANDO LECTURA...";
+          lblNombre.innerText = "Apunta la cámara al código QR";
+          statusText.innerText = "";
+        }, 1000);
       }, 500);
     }
   </script>
-
 </body>
 </html>
