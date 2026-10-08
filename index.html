@@ -281,6 +281,7 @@
 
     let datosEscaneados = { id: "", nombre: "", telefono: "" };
     let isProcessing = false;
+    let html5QrCode = null;
 
     // Elementos del DOM
     const badge = document.getElementById('badgeAlumno');
@@ -323,18 +324,50 @@
       statusText.innerText = "Listo para enviar registro.";
     }
 
-    // Inicializar el Lector QR tras la carga completa de la página
-    window.addEventListener('DOMContentLoaded', () => {
-      const html5QrCode = new Html5Qrcode("reader");
+    // Función para iniciar la cámara
+    function iniciarCamara() {
+      if (!html5QrCode) {
+        html5QrCode = new Html5Qrcode("reader");
+      }
+
+      // Si ya está escaneando, no hacer nada
+      if (html5QrCode.isScanning) return;
+
       const qrConfig = { fps: 10, qrbox: { width: 220, height: 220 } };
 
       html5QrCode.start({ facingMode: "environment" }, qrConfig, onScanSuccess)
         .catch(err => {
           console.error("Error al iniciar cámara: ", err);
-          lblNombre.innerText = "Ocurrió un problema con la cámara. Revisa los permisos.";
+          lblNombre.innerText = "Problema con la cámara. Revisa permisos o recarga.";
         });
+    }
 
+    // Función para detener la cámara de forma limpia
+    async function detenerCamara() {
+      if (html5QrCode && html5QrCode.isScanning) {
+        try {
+          await html5QrCode.stop();
+        } catch (err) {
+          console.warn("Error al detener la cámara: ", err);
+        }
+      }
+    }
+
+    // Inicializar el lector al cargar la página
+    window.addEventListener('DOMContentLoaded', () => {
+      iniciarCamara();
       btnEnviar.addEventListener('click', registrarYEnviar);
+    });
+
+    // REINICIO AUTOMÁTICO: Detectar cuando la página vuelve a estar en primer plano
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        // Al regresar a la pestaña, reiniciamos la cámara si no está escaneando
+        iniciarCamara();
+      } else {
+        // Al salir de la pestaña, pausamos la cámara para liberar el recurso
+        detenerCamara();
+      }
     });
 
     async function registrarYEnviar() {
@@ -377,15 +410,19 @@
       statusText.innerText = "¡Registrado con éxito! Abriendo WhatsApp...";
 
       setTimeout(() => {
-        window.location.href = urlWhatsApp;
+        // Abrir en pestaña nueva evita redirecciones que destruyan el contexto de la app
+        window.open(urlWhatsApp, '_blank');
         
-        // Reiniciar formulario para el siguiente alumno
+        // Reiniciar datos del formulario para el siguiente alumno
         setTimeout(() => {
           isProcessing = false;
           badge.classList.remove('active');
           lblId.innerText = "ESPERANDO LECTURA...";
           lblNombre.innerText = "Apunta la cámara al código QR";
           statusText.innerText = "";
+          
+          // Asegurar reinicio del flujo de video
+          iniciarCamara();
         }, 1000);
       }, 500);
     }
