@@ -292,7 +292,7 @@
     const chkTrabajo = document.getElementById('chkTrabajo');
 
     function onScanSuccess(decodedText) {
-      if (isProcessing) return; // Evitar múltiples lecturas seguidas
+      if (isProcessing) return;
 
       const partes = decodedText.split(',');
       
@@ -324,13 +324,12 @@
       statusText.innerText = "Listo para enviar registro.";
     }
 
-    // Función para iniciar la cámara
+    // Encendido y apagado controlado del hardware de la cámara
     function iniciarCamara() {
       if (!html5QrCode) {
         html5QrCode = new Html5Qrcode("reader");
       }
 
-      // Si ya está escaneando, no hacer nada
       if (html5QrCode.isScanning) return;
 
       const qrConfig = { fps: 10, qrbox: { width: 220, height: 220 } };
@@ -342,7 +341,6 @@
         });
     }
 
-    // Función para detener la cámara de forma limpia
     async function detenerCamara() {
       if (html5QrCode && html5QrCode.isScanning) {
         try {
@@ -353,21 +351,24 @@
       }
     }
 
-    // Inicializar el lector al cargar la página
+    // Control dinámico cuando la app entra/sale de segundo plano
+    function manejarVisibilidad() {
+      if (document.visibilityState === 'visible') {
+        // Al regresar del segundo plano, forzar reinicio limpio
+        detenerCamara().then(() => {
+          setTimeout(iniciarCamara, 300);
+        });
+      } else {
+        detenerCamara();
+      }
+    }
+
+    document.addEventListener('visibilitychange', manejarVisibilidad);
+    window.addEventListener('pageshow', manejarVisibilidad);
+
     window.addEventListener('DOMContentLoaded', () => {
       iniciarCamara();
       btnEnviar.addEventListener('click', registrarYEnviar);
-    });
-
-    // REINICIO AUTOMÁTICO: Detectar cuando la página vuelve a estar en primer plano
-    document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'visible') {
-        // Al regresar a la pestaña, reiniciamos la cámara si no está escaneando
-        iniciarCamara();
-      } else {
-        // Al salir de la pestaña, pausamos la cámara para liberar el recurso
-        detenerCamara();
-      }
     });
 
     async function registrarYEnviar() {
@@ -395,7 +396,7 @@
         console.warn("Advertencia al enviar a Sheets (continuando a WhatsApp):", err);
       }
 
-      // Generación del mensaje
+      // Mensaje estructurado
       const mensaje = trabajo === "SI"
         ? `Estimado tutor, le informamos que el alumno ${datosEscaneados.nombre} asistió a clase hoy y SÍ trabajó en sus actividades.`
         : `Estimado tutor, le informamos que el alumno ${datosEscaneados.nombre} asistió a clase hoy, pero NO cumplió con sus actividades.`;
@@ -406,25 +407,24 @@
         telLimpio = CONFIG.PAIS_CODIGO + telLimpio;
       }
 
-      const urlWhatsApp = `https://api.whatsapp.com/send?phone=${telLimpio}&text=${encodeURIComponent(mensaje)}`;
+      // PROTOCOLO DIRECTO DE APLICACIÓN: Salta la web e invoca directamente la App de WhatsApp
+      const uriWhatsAppApp = `whatsapp://send?phone=${telLimpio}&text=${encodeURIComponent(mensaje)}`;
+
       statusText.innerText = "¡Registrado con éxito! Abriendo WhatsApp...";
 
       setTimeout(() => {
-        // Abrir en pestaña nueva evita redirecciones que destruyan el contexto de la app
-        window.open(urlWhatsApp, '_blank');
+        // Redirección directa al esquema de la aplicación
+        window.location.href = uriWhatsAppApp;
         
-        // Reiniciar datos del formulario para el siguiente alumno
+        // Limpieza de datos en la tarjeta para el próximo escaneo
         setTimeout(() => {
           isProcessing = false;
           badge.classList.remove('active');
           lblId.innerText = "ESPERANDO LECTURA...";
           lblNombre.innerText = "Apunta la cámara al código QR";
           statusText.innerText = "";
-          
-          // Asegurar reinicio del flujo de video
-          iniciarCamara();
-        }, 1000);
-      }, 500);
+        }, 1200);
+      }, 400);
     }
   </script>
 </body>
